@@ -192,6 +192,6 @@ To add a new module: subclass `Screen` (or `AppScreen`), define a `MenuTab` and 
 
 ## License
 
-Counter-Limitation License (CLL) v1.1 — see [LICENSE.md](LICENSE.md).
+Counter-Limitation License (CLL) v1.2 — see [LICENSE.md](LICENSE.md).
 
 Free for personal, educational, and research use. Commercial use prohibited.
