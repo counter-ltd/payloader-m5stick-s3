@@ -21,7 +21,7 @@ A pocket-sized everyday carry hacker tool built on the M5StickC S3 (ESP32-S3). F
 
 ## Features
 
-### APPS tab
+### PAYLOADS tab
 
 #### Clock
 Real-time clock synced from the on-board RTC at boot. Falls back to build timestamp when RTC has no valid time, and writes the build time back into RTC so subsequent reboots are accurate.
@@ -38,6 +38,30 @@ Full U2F authenticator presented as a USB HID device. Works with any browser or 
 
 #### BT Key (FIDO2/U2F over Bluetooth)
 Same FIDO2/U2F implementation as USB Key, exposed over BLE instead of USB HID. Pair with a host once; subsequent authentications are seamless.
+
+#### Music (AirPlay receiver) — *in progress*
+Turns the device into a wireless AirPlay → line-out dongle. Launching the
+payload makes the M5Stick host its own Wi-Fi network (`M5 Music`, see
+`wifi_config.h`); join it from an iPhone and stream over AirPlay. Audio leaves
+the device over I2S to an **external I2S DAC** (e.g. PCM5102A) with a 3.5mm jack.
+
+> **Hardware notes:**
+> - AirPlay is *not* Bluetooth. The ESP32-S3 is BLE-only with no Bluetooth
+>   Classic radio, so A2DP ("BT speaker") audio is physically impossible here.
+> - A USB-C → 3.5mm adapter does **not** work: the S3's USB-C is data/power only
+>   (no USB-C analog-audio routing), and the device can't act as a USB-audio
+>   host for an active DAC dongle.
+> - The on-board ES8311's analog output is hard-wired to the internal speaker,
+>   not to any external jack. So line-out requires an **external I2S DAC** on
+>   the audio I2S bus (BCLK G17, LRCK G15, DIN G16, MCLK G18; power from PORT.A).
+
+Built in stages:
+- **Stage 1 (done):** SoftAP comes up, status screen shows SSID / password /
+  device IP / connected-phone count, and an I2S test tone confirms the external
+  DAC + line-out path (press the front **A** button to replay it).
+- **Stage 2 (next):** mDNS `_raop._tcp` advertising + RTSP handshake so the
+  device appears in and accepts the iOS AirPlay connection.
+- **Stage 3:** RTP audio → AES decrypt → ALAC decode → I2S → external DAC.
 
 ---
 
@@ -150,10 +174,13 @@ Payloader-M5StickS3/
 ├── framework.h / .cpp        # Screen base class + Navigator stack
 ├── menu_screen.h / .cpp      # MenuScreen — tabbed UI, scrollable items, pickers
 ├── app_screen.h              # AppScreen base (full-screen apps)
-├── apps_tab.h / .cpp         # APPS tab — Clock, USB Key, BT Key launchers
+├── apps_tab.h / .cpp         # PAYLOADS tab — Clock, USB Key, BT Key, Music launchers
 ├── clock_app.h / .cpp        # Clock full-screen app
 ├── security_key_app.h / .cpp # FIDO U2F over USB HID — UI layer
 ├── bt_key_app.h / .cpp       # FIDO U2F over BLE — UI layer
+├── music_app.h / .cpp        # Music payload — AirPlay receiver (SoftAP, in progress)
+├── audio_out.h / .cpp        # I2S output to external DAC (PCM5102A) for line-out
+├── wifi_config.h             # SoftAP credentials for the Music payload
 ├── fido_u2f.h / .cpp         # FIDO U2F core — keygen, signing, attestation
 ├── fido_hid.h / .cpp         # USB HID transport for FIDO
 ├── fido_bt.h / .cpp          # BLE transport for FIDO
